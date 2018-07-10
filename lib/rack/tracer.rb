@@ -6,6 +6,7 @@ module Rack
   class Tracer
     REQUEST_URI = 'REQUEST_URI'.freeze
     REQUEST_METHOD = 'REQUEST_METHOD'.freeze
+    PATH_INFO = 'PATH_INFO'.freeze
 
     # Create a new Rack Tracer middleware.
     #
@@ -32,10 +33,11 @@ module Rack
 
     def call(env)
       method = env[REQUEST_METHOD]
-
+      operation_name = operation_from_env(env)
       context = @tracer.extract(OpenTracing::FORMAT_RACK, env) if @trust_incoming_span
+
       scope = @tracer.start_active_span(
-        method,
+        operation_name,
         child_of: context,
         tags: {
           'component' => 'rack',
@@ -80,6 +82,12 @@ module Rack
     def route_from_env(env)
       route = env['sinatra.route']
       route.split(' ').last if route
+    end
+
+    def operation_from_env(env)
+      method = env[REQUEST_METHOD]
+      request_path = env[PATH_INFO] || '/'
+      "#{method} #{request_path}"
     end
   end
 end

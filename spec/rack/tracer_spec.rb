@@ -13,6 +13,7 @@ RSpec.describe Rack::Tracer do
   end
 
   let(:method) { 'POST' }
+  let(:operation_name) { "#{method} #{env['PATH_INFO']}" }
 
   shared_examples 'calls on_start_span and on_finish_span callbacks' do
     it 'calls on_start_span callback' do
@@ -70,7 +71,7 @@ RSpec.describe Rack::Tracer do
       expect(parent_span).to be_finished
       span = tracer.spans.last
       expect(span).to be_finished
-      expect(span.operation_name).to eq(method)
+      expect(span.operation_name).to eq(operation_name)
       expect(span.context.parent_id).to eq(parent_span.context.span_id)
     end
 
@@ -124,7 +125,7 @@ RSpec.describe Rack::Tracer do
 
       expect(&respond_with_timeout_error).to raise_error do |_|
         span = tracer.spans[0]
-        expect(span.operation_name).to eq(method)
+        expect(span.operation_name).to eq(operation_name)
         expect(span).to be_finished
       end
     end
@@ -136,7 +137,7 @@ RSpec.describe Rack::Tracer do
 
       expect(&respond_with_timeout_error).to raise_error do |_|
         span = tracer.spans[0]
-        expect(span.operation_name).to eq(method)
+        expect(span.operation_name).to eq(operation_name)
         expect(span.tags).to include(error: true)
       end
     end
@@ -149,7 +150,7 @@ RSpec.describe Rack::Tracer do
 
       expect(&respond_with_timeout_error).to raise_error do |thrown_exception|
         span = tracer.spans[0]
-        expect(span.operation_name).to eq(method)
+        expect(span.operation_name).to eq(operation_name)
         expect(span.logs).to include(
           a_hash_including(
             event: 'error',
